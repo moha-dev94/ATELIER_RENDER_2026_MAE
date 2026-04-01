@@ -17,12 +17,13 @@ variable "github_actor" {
   type        = string
 }
 
-# Service Backend (Flask)
+# --- SERVICE BACKEND (FLASK) ---
 resource "render_web_service" "flask_app" {
   name   = "flask-render-iac-${var.github_actor}"
   plan   = "free"
   region = "frankfurt"
 
+  # CORRECTION : Le bloc env_vars est maintenant BIEN placé ici
   env_vars = {
     ENV = {
       value = "production"
@@ -37,7 +38,7 @@ resource "render_web_service" "flask_app" {
   }
 }
 
-# Service de gestion de BDD (Adminer)
+# --- SERVICE ADMINER (POUR LA SÉQUENCE 5) ---
 resource "render_web_service" "adminer" {
   name   = "adminer-${var.github_actor}"
   plan   = "free"
