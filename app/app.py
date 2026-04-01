@@ -18,6 +18,9 @@ def info():
         "student": "VOTRE_NOM",
         "version": "v1"
     }
+@app.route("/env")
+def env():
+    return {"env": os.getenv("ENV")}
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
