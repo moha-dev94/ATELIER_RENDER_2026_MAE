@@ -56,27 +56,29 @@ jobs:
       - name: Install jq
         run: sudo apt-get update && sudo apt-get install -y jq
 
-      - name: Delete existing Render services
+      - name: Delete existing Render services (Flask & Adminer)
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
         run: |
-          # Récupérer la liste des services
+          # Récupération de tous les services
           RESPONSE=$(curl -s -H "Authorization: Bearer ${RENDER_API_KEY}" https://api.render.com/v1/services)
-          
-          # Liste des services à supprimer (Flask et Adminer)
-          SERVICES_TO_DELETE=("flask-render-iac-${{ env.ACTOR }}" "adminer-${{ env.ACTOR }}")
-          
-          for NAME in "${SERVICES_TO_DELETE[@]}"; do
-            SERVICE_ID=$(echo "$RESPONSE" | jq -r --arg NAME "$NAME" '.[] | select(.service.name == $NAME) | .service.id' | head -n 1)
+
+          # Liste des services à nettoyer (Flask et Adminer)
+          # Note : ACTOR est défini plus haut dans ton workflow
+          SERVICES=("flask-render-iac-${{ env.ACTOR }}" "adminer-${{ env.ACTOR }}")
+
+          for NAME in "${SERVICES[@]}"; do
+            echo "Vérification du service : $NAME"
+            SERVICE_ID=$(echo "$RESPONSE" | jq -r --arg NAME "$NAME" '.[] | select(type=="object" and .service != null) | select(.service.name == $NAME) | .service.id' | head -n 1)
             
             if [ -n "$SERVICE_ID" ] && [ "$SERVICE_ID" != "null" ]; then
-              echo "Deleting service: $NAME ($SERVICE_ID)"
+              echo "Suppression de $NAME ($SERVICE_ID)..."
               curl -s -X DELETE -H "Authorization: Bearer ${RENDER_API_KEY}" "https://api.render.com/v1/services/${SERVICE_ID}"
             fi
           done
 
-      - name: Wait for deletion to complete
-        run: sleep 20 # On augmente le délai pour être sûr que Render a libéré les noms
+      - name: Wait for deletion
+        run: sleep 20
 
       - name: Wait for Render cleanup
         run: sleep 15
