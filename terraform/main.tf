@@ -13,21 +13,16 @@ provider "render" {
 }
 
 variable "github_actor" {
-  description = "GitHub username"
-  type        = string
+  type = string
 }
 
-# --- SERVICE BACKEND (FLASK) ---
 resource "render_web_service" "flask_app" {
   name   = "flask-render-iac-${var.github_actor}"
   plan   = "free"
   region = "frankfurt"
 
-  # CORRECTION : Le bloc env_vars est maintenant BIEN placé ici
   env_vars = {
-    ENV = {
-      value = "production"
-    }
+    ENV = { value = "production" }
   }
 
   runtime_source = {
@@ -38,7 +33,6 @@ resource "render_web_service" "flask_app" {
   }
 }
 
-# --- SERVICE ADMINER (CORRIGÉ) ---
 resource "render_web_service" "adminer" {
   name   = "adminer-${var.github_actor}"
   plan   = "free"
@@ -46,10 +40,8 @@ resource "render_web_service" "adminer" {
 
   runtime_source = {
     image = {
-      # On enlève le ":latest" de l'URL
-      image_url = "docker.io/library/adminer" 
-      # On le place dans le champ tag dédié
-      tag       = "latest" 
+      image_url = "docker.io/library/adminer"
+      tag       = "latest"
     }
   }
 }
