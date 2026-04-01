@@ -17,24 +17,35 @@ variable "github_actor" {
   type        = string
 }
 
+# Service Backend (Flask)
 resource "render_web_service" "flask_app" {
   name   = "flask-render-iac-${var.github_actor}"
   plan   = "free"
   region = "frankfurt"
 
-   env_vars = {
-  ENV = {
-    value = "production"
+  env_vars = {
+    ENV = {
+      value = "production"
+    }
   }
-}
 
   runtime_source = {
     image = {
       image_url = var.image_url
       tag       = var.image_tag
-
- 
     }
   }
+}
 
+# Service de gestion de BDD (Adminer)
+resource "render_web_service" "adminer" {
+  name   = "adminer-${var.github_actor}"
+  plan   = "free"
+  region = "frankfurt"
+
+  runtime_source = {
+    image = {
+      image_url = "docker.io/library/adminer:latest"
+    }
+  }
 }
