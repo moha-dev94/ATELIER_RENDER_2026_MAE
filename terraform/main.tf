@@ -38,7 +38,7 @@ resource "render_web_service" "flask_app" {
   }
 }
 
-# --- SERVICE ADMINER (POUR LA SÉQUENCE 5) ---
+# --- SERVICE ADMINER (CORRIGÉ) ---
 resource "render_web_service" "adminer" {
   name   = "adminer-${var.github_actor}"
   plan   = "free"
@@ -46,7 +46,10 @@ resource "render_web_service" "adminer" {
 
   runtime_source = {
     image = {
-      image_url = "docker.io/library/adminer:latest"
+      # On enlève le ":latest" de l'URL
+      image_url = "docker.io/library/adminer" 
+      # On le place dans le champ tag dédié
+      tag       = "latest" 
     }
   }
 }
