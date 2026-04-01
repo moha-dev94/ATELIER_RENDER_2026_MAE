@@ -56,27 +56,27 @@ jobs:
       - name: Install jq
         run: sudo apt-get update && sudo apt-get install -y jq
 
-      - name: Delete existing Render services (Flask & Adminer)
+      - name: Delete existing Render services
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
         run: |
-          # Récupération de tous les services sur ton compte
+          # Récupérer la liste des services
           RESPONSE=$(curl -s -H "Authorization: Bearer ${RENDER_API_KEY}" https://api.render.com/v1/services)
-
-          # Liste des noms à nettoyer
-          SERVICES_TO_CLEAN=("${{ env.SERVICE_NAME }}" "adminer-${{ env.ACTOR }}")
-
-          for NAME in "${SERVICES_TO_CLEAN[@]}"; do
-            echo "Vérification du service : $NAME"
+          
+          # Liste des services à supprimer (Flask et Adminer)
+          SERVICES_TO_DELETE=("flask-render-iac-${{ env.ACTOR }}" "adminer-${{ env.ACTOR }}")
+          
+          for NAME in "${SERVICES_TO_DELETE[@]}"; do
             SERVICE_ID=$(echo "$RESPONSE" | jq -r --arg NAME "$NAME" '.[] | select(.service.name == $NAME) | .service.id' | head -n 1)
             
             if [ -n "$SERVICE_ID" ] && [ "$SERVICE_ID" != "null" ]; then
-              echo "Suppression de $NAME (ID: $SERVICE_ID)..."
+              echo "Deleting service: $NAME ($SERVICE_ID)"
               curl -s -X DELETE -H "Authorization: Bearer ${RENDER_API_KEY}" "https://api.render.com/v1/services/${SERVICE_ID}"
-            else
-              echo "Service $NAME non trouvé, rien à supprimer."
             fi
           done
+
+      - name: Wait for deletion to complete
+        run: sleep 20 # On augmente le délai pour être sûr que Render a libéré les noms
 
       - name: Wait for Render cleanup
         run: sleep 15
