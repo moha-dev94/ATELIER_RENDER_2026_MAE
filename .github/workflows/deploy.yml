@@ -56,34 +56,22 @@ jobs:
       - name: Install jq
         run: sudo apt-get update && sudo apt-get install -y jq
 
-      - name: Delete existing Render service if present
+      - name: Delete existing Render services
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
         run: |
-          RESPONSE=$(curl -s \
-            -H "Authorization: Bearer ${RENDER_API_KEY}" \
-            https://api.render.com/v1/services)
+          RESPONSE=$(curl -s -H "Authorization: Bearer ${RENDER_API_KEY}" https://api.render.com/v1/services)
 
-          echo "Services returned by Render:"
-          echo "$RESPONSE" | jq -r '.[] | select(type=="object" and .service != null) | .service.name'
+          # Liste des services à supprimer avant le déploiement
+          SERVICES=("$SERVICE_NAME" "adminer-${ACTOR}")
 
-          SERVICE_ID=$(echo "$RESPONSE" \
-            | jq -r --arg NAME "$SERVICE_NAME" '
-                .[]
-                | select(type=="object" and .service != null)
-                | select(.service.name == $NAME)
-                | .service.id
-              ' \
-            | head -n 1)
-
-          if [ -z "$SERVICE_ID" ] || [ "$SERVICE_ID" = "null" ]; then
-            echo "No existing Render service named ${SERVICE_NAME}. Nothing to delete."
-          else
-            echo "Deleting existing Render service: ${SERVICE_NAME} (${SERVICE_ID})"
-            curl -s -X DELETE \
-              -H "Authorization: Bearer ${RENDER_API_KEY}" \
-              "https://api.render.com/v1/services/${SERVICE_ID}"
-          fi
+          for NAME in "${SERVICES[@]}"; do
+            SERVICE_ID=$(echo "$RESPONSE" | jq -r --arg NAME "$NAME" '.[] | select(.service.name == $NAME) | .service.id' | head -n 1)
+            if [ -n "$SERVICE_ID" ] && [ "$SERVICE_ID" != "null" ]; then
+              echo "Deleting $NAME ($SERVICE_ID)..."
+              curl -s -X DELETE -H "Authorization: Bearer ${RENDER_API_KEY}" "https://api.render.com/v1/services/${SERVICE_ID}"
+            fi
+          done
 
       - name: Wait after delete
         run: sleep 10
